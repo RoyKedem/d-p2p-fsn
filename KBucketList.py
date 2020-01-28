@@ -11,6 +11,7 @@ class KBucketList:
             self.bucket_list.append(x)
 
     def triple_store(self, triple):
+        triple = triple(triple.id, triple.ip)   # check for other way
         distance = self.my_id ^ triple.id
 
         for i in range(0, 8):   #replace 8 with const
@@ -19,3 +20,13 @@ class KBucketList:
             if (bottom_range <= distance) and (distance < end_range):
                 self.bucket_list[i].add_triple(triple)
                 break
+
+    def kbucket_lookup(self, triple):
+        triple = triple(triple.id, triple.ip)   # check for other way
+        distance = self.my_id ^ triple.id
+
+        for i in range(0, 8):  # replace 8 with const
+            bottom_range = (2 ** i) + self.my_id
+            end_range = (2 ** (i + 1)) + self.my_id
+            if (bottom_range <= distance) and (distance < end_range):
+                return self.bucket_list[i]
