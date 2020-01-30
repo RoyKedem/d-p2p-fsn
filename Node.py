@@ -1,8 +1,8 @@
 import socket
 import hashlib
-import Triple
-import KBucket
-import KBucketList
+from Triple import Triple
+from KBucket import KBucket
+from KBucketList import KBucketList
 
 
 class Node:
@@ -37,7 +37,7 @@ class Node:
         :param node_id:
         :return: KBucket obj of the K closest nodes triples to the node_id param
         """
-        pass
+        self.routing_table.kbucket_lookup()
 
     def store_file(self, file_name, kbucket):    # todo: check why i wrote kbucket param
         pass

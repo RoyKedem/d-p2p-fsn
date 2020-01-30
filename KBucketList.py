@@ -1,7 +1,8 @@
-import Triple
-import KBucket
+from Triple import Triple
+from KBucket import KBucket
 
 
+# todo: replace all numbers
 class KBucketList:
     def __init__(self, my_id):
         self.bucket_list = []
@@ -14,7 +15,7 @@ class KBucketList:
         triple = triple(triple.id, triple.ip)   # check for other way
         distance = self.my_id ^ triple.id
 
-        for i in range(0, 8):   #replace 8 with const
+        for i in range(0, 8):   # replace 8 with const
             bottom_range = (2 ** i) + self.my_id
             end_range = (2 ** (i + 1)) + self.my_id
             if (bottom_range <= distance) and (distance < end_range):
@@ -28,5 +29,9 @@ class KBucketList:
         for i in range(0, 8):  # replace 8 with const
             bottom_range = (2 ** i) + self.my_id
             end_range = (2 ** (i + 1)) + self.my_id
+
             if (bottom_range <= distance) and (distance < end_range):
-                return self.bucket_list[i]
+                returned_bucket = self.bucket_list[i].bucket.copy()
+                # replce 20 with const
+                # todo: return always k length bucket
+                return returned_bucket
