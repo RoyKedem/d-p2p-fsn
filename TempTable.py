@@ -6,14 +6,19 @@ from KBucket import KBucket
 class Triple2(Triple):
     def __init__(self, triple, searched=False):
         Triple.__init__(self, triple.ip, triple.port)
-        self.searched = searched
+        self.queried = searched
         self.id = triple.id
 
 
+# todo: only 20 triples in a node_lookup_table
 class TempTable:
-    def __init__(self):
+    def __init__(self, alpha_nodes=""):
         self.node_lookup_table = []
+        if not x == "":
+            for trpl in alpha_nodes:
+                self.node_lookup_table.append(Triple2(trpl))
 
+    # todo: remove duplicate triples
     def add_sorted_bucket(self, k_bucket, my_id):
         """
         add a new bucket to the TempTable. it adds the triples in order by the distance from my_id
@@ -26,6 +31,7 @@ class TempTable:
 
         self.node_lookup_table.sort(key=lambda elem: elem.id ^ my_id)
 
+    def get_triple_by_id
 
 if __name__ == '__main__':
     my_id = 1

@@ -1,5 +1,6 @@
 import hashlib
 import binascii
+import socket
 
 
 class Triple:
@@ -17,4 +18,11 @@ class Triple:
         self.id = int(a.hexdigest(), 16)
 
     def create_socket(self):
-        pass
+        my_socket = socket.socket()
+        my_socket.connect((self.ip, self.port))
+        return my_socket
+
+
+if __name__ == '__main__':
+    x = Triple('1.1.1.1', 11)
+    y = Triple(x.ip, x.port)

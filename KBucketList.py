@@ -23,6 +23,11 @@ class KBucketList:
                 break
 
     def kbucket_lookup(self, triple):
+        """
+
+        :param triple:
+        :return: kbucket object
+        """
         triple = triple(triple.id, triple.ip)   # check for other way
         distance = self.my_id ^ triple.id
 
@@ -32,6 +37,6 @@ class KBucketList:
 
             if (bottom_range <= distance) and (distance < end_range):
                 returned_bucket = self.bucket_list[i].bucket.copy()
-                # replce 20 with const
+                # replace 20 with const
                 # todo: return always k length bucket
                 return returned_bucket

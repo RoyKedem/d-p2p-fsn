@@ -14,9 +14,12 @@ class KBucket:
         self.bucket = []
         self.range_factor = range_factor
 
+    def __getitem__(self, item):
+        return self.bucket[item]
+
     def add_triple(self, triple_to_add):
         self.bucket.append(triple_to_add)
-        # todo: when size=k remove triples doesnt respone to ping
+        # todo: when size=k remove triples doesnt response to ping
 
     def delete_triple(self, triple_to_delete):
         index = 0
