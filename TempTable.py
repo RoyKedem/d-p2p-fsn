@@ -10,15 +10,13 @@ class Triple2(Triple):
         self.id = triple.id
 
 
-# todo: only 20 triples in a node_lookup_table
 class TempTable:
     def __init__(self, alpha_nodes=""):
         self.node_lookup_table = []
-        if not x == "":
+        if not alpha_nodes == "":
             for trpl in alpha_nodes:
                 self.node_lookup_table.append(Triple2(trpl))
 
-    # todo: remove duplicate triples
     def add_sorted_bucket(self, k_bucket, my_id):
         """
         add a new bucket to the TempTable. it adds the triples in order by the distance from my_id
@@ -31,23 +29,20 @@ class TempTable:
 
         self.node_lookup_table.sort(key=lambda elem: elem.id ^ my_id)
 
-    def get_triple_by_id
+        # remove duplicates
+        seen_ids = []
+        for triple in self.node_lookup_table:
+            seen_ids.append(triple.id)
+            if seen_ids.count(triple.id) == 2:
+                self.node_lookup_table.remove(triple)
+                seen_ids.remove(triple.id)
 
-if __name__ == '__main__':
-    my_id = 1
-    x = KBucket(2)
-    for i in range(40, 50):
-        x.add_triple(Triple('127.0.01', i))
+        # length of the node lookup table is max 20
+        if len(self.node_lookup_table) > 20:
+            for i in range(20, len(self.node_lookup_table)):
+                self.node_lookup_table.pop(i)
 
-   # for triple in x.bucket:
-        # print("before - " + str(triple.id ^ my_id))
 
-    print("break")
-
-    t = TempTable()
-    t.add_sorted_bucket(x, my_id)
-    print(t.node_lookup_table)
-
-    for triple in t.node_lookup_table:
-        print("after - " + str(int((triple.id ^ my_id) / 10000000000000000000000000000000)))
+    def get_triple_by_id(self):
+        pass
 

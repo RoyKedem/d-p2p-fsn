@@ -5,7 +5,6 @@ class KBucket:
     """
 
     """
-    # todo: copy constructor
     def __init__(self, range_factor):
         """
 
@@ -14,6 +13,7 @@ class KBucket:
         self.bucket = []
         self.range_factor = range_factor
 
+    # todo: what the hell is this
     def __getitem__(self, item):
         return self.bucket[item]
 
