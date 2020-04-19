@@ -29,6 +29,7 @@ def recv_with_timeout(sock, size, timeout):
     finally:
         sock.close()
 
+
 class Node:
     def __init__(self, port):
         """
@@ -55,6 +56,58 @@ class Node:
         # storage
         self.storage = []
 
+    def node_lookup_recurse(self, target_id, temp_table):
+
+        # this var hold the list before the changes to compare it to the list after the changes
+        old_id_list = temp_table.get_id_list()
+
+        # step 4
+        i = 0
+        alpha_nodes = []
+        # find the closest triple to the target that hasn't been queried yet
+        while (not temp_table.node_lookup_table[i].queried) and len(alpha_nodes) < 3:
+            alpha_nodes.append(temp_table.node_lookup_table[i])
+            i += 1
+        # send the FIND_NODE RPCs
+        msg = "FIND_NODE##" + target_id
+        for node_connection in alpha_nodes:
+            sock = node_connection.create_socket()  # socket type object
+            sock.send(msg)
+        # step 5
+            node_connection.queried = True
+
+        # step 6
+        # todo: change the name alpha nodes after it role change
+            # answer - array that will get the return values of the threads
+            answers = []
+            # index - the index of the node connection in the alpha nodes list
+            index = alpha_nodes.index(node_connection)
+            # each cell in the alpha_nodes list holds a thread of the recv function
+            alpha_nodes[index] = Thread(
+                target=lambda a, arg1, arg2, arg3: a.append(recv_with_timeout(arg1, arg2, arg3)),
+                args=(answers, sock, 1024, 10))
+            alpha_nodes[index].start()
+            alpha_nodes[index].join()
+
+        # while loop waits until all the threads are done or timeout
+        while not len(alpha_nodes) == 0:
+            for thread in alpha_nodes:
+                if not thread.is_alive():  # if the thread is over
+                    index = alpha_nodes.index(thread)
+                    if not answers[index] == "ERROR: timeout":  # and it returned with kbucket
+                        # add kbuckets to the temp table
+                        temp_table.add_sorted_bucket(answers[index])
+                    alpha_nodes.pop(index)  # remove the thread from the waiting list
+
+        # step 7
+        # compare the id list
+        if old_id_list == temp_table.get_id_list():
+            return temp_table
+        else:
+            self.node_lookup_recurse(target_id, temp_table)
+
+
+
     # todo: parallelism
     def node_lookup(self, target_id):
         """
@@ -79,40 +132,7 @@ class Node:
         temp_table = TempTable(alpha_nodes)
 
         # step 4
-        i = 0
-        alpha_nodes = []
-        # find the closest triple to the target that hasn't been queried yet
-        while (not temp_table.node_lookup_table[i].queried) and len(alpha_nodes) < 3:
-            alpha_nodes.append(temp_table.node_lookup_table[i])
-        # send the FIND_NODE RPCs
-        msg = "FIND_NODE##" + target_id
-        for node_connection in alpha_nodes:
-            sock = node_connection.create_socket()  # socket type object
-            sock.send(msg)
-
-        # step 5
-            node_connection.queried = True
-
-        # step 6
-            # answer - array that will get the return values of the threads
-            answers = []
-            # index - the index of the node connection in the alpha nodes list
-            index = alpha_nodes.index(node_connection)
-            # each cell in the alpha_nodes list holds a thread of the recv function
-            alpha_nodes[index] = Thread(target=lambda a, arg1, arg2, arg3: a.append(recv_with_timeout(arg1, arg2, arg3)), args=(answers, sock, 1024, 10))
-            alpha_nodes[index].start()
-            alpha_nodes[index].join()
-
-        # while loop waits until all the threads are done or timeout
-        while not len(alpha_nodes) == 0:
-            for thread in alpha_nodes:
-                if not thread.is_alive():   # if the thread is over
-                    index = alpha_nodes.index(thread)
-                    if not answers[index] == "ERROR: timeout":  # and it returned with kbucket
-                        # add kbuckets to the temp table
-                        temp_table.add_sorted_bucket(answers[index])
-                    alpha_nodes.pop(index)  #
-
+        self.node_lookup_recurse(target_id, temp_table)
 
     # todo: finish
     # todo: when receives a message from other it will add it to the KBucketList
@@ -131,7 +151,7 @@ class Node:
         while True:
             (client_socket, client_address) = server_socket.accept()
             clients.append(client_socket)
-            a = Thread(target=handle_rpc, args=(client_socket,))    # todo: add the object to params to fix error
+            a = Thread(target=self.handle_rpc, args=(client_socket,))    # todo: add the object to params to fix error
             a.start()
 
     # todo: finish

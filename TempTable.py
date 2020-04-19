@@ -42,6 +42,27 @@ class TempTable:
             for i in range(20, len(self.node_lookup_table)):
                 self.node_lookup_table.pop(i)
 
+    def get_id_list(self):
+        """
+        :return: a list of the id's of the k first nodes
+        """
+        return_list = []    # the list tht returns from the func, holds the id's of the temp table triples
+
+        for triple in self.node_lookup_table:
+            return_list.append(triple.id)
+
+        return return_list
+
+    def get_regular_bucket(self):
+        """
+
+        :return: a kbucket that holds Triple instead Triple 2
+        """
+
+    def is_all_queried(self):
+        return_value = True
+        for triple in self.node_lookup_table:
+
 
     def get_triple_by_id(self):
         pass
