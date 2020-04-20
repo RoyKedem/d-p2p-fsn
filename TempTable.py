@@ -3,7 +3,11 @@ from KBucket import KBucket
 # todo: change name!!!!!!!!!
 
 
-class Triple2(Triple):
+class TempTableTripleObject(Triple):
+    """
+    the object that is stored in the temp table
+    the object is like the triple object but with queried attribute
+    """
     def __init__(self, triple, searched=False):
         Triple.__init__(self, triple.ip, triple.port)
         self.queried = searched
@@ -13,9 +17,9 @@ class Triple2(Triple):
 class TempTable:
     def __init__(self, alpha_nodes=""):
         self.node_lookup_table = []
-        if not alpha_nodes == "":
+        if alpha_nodes != "":
             for trpl in alpha_nodes:
-                self.node_lookup_table.append(Triple2(trpl))
+                self.node_lookup_table.append(TempTableTripleObject(trpl))
 
     def add_sorted_bucket(self, k_bucket, my_id):
         """
@@ -25,7 +29,7 @@ class TempTable:
         :return:
         """
         for triple in k_bucket:
-            self.node_lookup_table.append(Triple2(triple))
+            self.node_lookup_table.append(TempTableTripleObject(triple))
 
         self.node_lookup_table.sort(key=lambda elem: elem.id ^ my_id)
 
@@ -60,10 +64,10 @@ class TempTable:
         """
 
     def is_all_queried(self):
-        return_value = True
         for triple in self.node_lookup_table:
-
-
+            if not triple.queried: return False
+        return True
+    
     def get_triple_by_id(self):
         pass
 
