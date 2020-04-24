@@ -67,7 +67,7 @@ class TempTable:
         for triple in self.node_lookup_table:
             if not triple.queried: return False
         return True
-    
+
     def get_triple_by_id(self):
         pass
 

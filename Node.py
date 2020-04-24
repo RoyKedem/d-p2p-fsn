@@ -1,35 +1,22 @@
 import socket
+import pickle
 from threading import Thread
 import hashlib
+import random
+import pandas as pd
+import numpy as np
+
+import utility
 from Triple import Triple
 from KBucket import KBucket
 from KBucketList import KBucketList
 from TempTable import *
-import random
 # todo: create config file
 
 alpha = 1
 
 
-def recv_with_timeout(sock, size, timeout):
-    """
-    socket.recv function that have a timeout
-    :param sock: the socket object
-    :param size: size (for the recv function)
-    :param timeout: number of second for the timeout
-    :return:
-    """
-    # set timeout of 10 seconds of no activity
-    sock.settimeout(timeout)
-
-    try:
-        return sock.recv(size)
-    except socket.timeout:
-        return 'ERROR: timeout'
-    finally:
-        sock.close()
-
-
+# todo: optional id param
 class Node:
     def __init__(self, port):
         """
@@ -56,6 +43,10 @@ class Node:
         # storage
         self.storage = []
 
+        print('starting main thread...')
+        server_thread = Thread(target=self.main_thread)
+        server_thread.start()
+        print('Done!')
 
     # todo: parallelism
     def node_lookup(self, target_id):
@@ -112,7 +103,7 @@ class Node:
 
             # each cell in the answers_threads list holds a thread of the recv function
             answers_threads.append(Thread(
-                target=lambda a, arg1, arg2, arg3: a.append(recv_with_timeout(arg1, arg2, arg3)),
+                target=lambda a, arg1, arg2, arg3: a.append(utility.recv_with_timeout(arg1, arg2, arg3)),
                 args=(answers, sock, 1024, 10)))
             answers_threads[-1].start()
             answers_threads[-1].join()
@@ -142,16 +133,17 @@ class Node:
         it opens server socket
         :return:
         """
+        print('setting up a server on port ' + str(self.port) + '...')
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_socket.bind(('0.0.0.0', self.port))
 
         server_socket.listen(5)     # todo: replace with const
-
+        print('server is ready')
         clients = []    # holds all the clients sockets
         while True:
             (client_socket, client_address) = server_socket.accept()
             clients.append(client_socket)
-            a = Thread(target=self.handle_rpc, args=(client_socket,))    # todo: add the object to params to fix error
+            a = Thread(target=self.handle_rpc, args=(client_socket,))
             a.start()
 
     # todo: finish
@@ -161,17 +153,21 @@ class Node:
         :param client_socket: socket object to communicate with clients
         :return:
         """
-        while True:
+        handled = False
+        while not handled:
             rpc = client_socket.recv(1024)
-            rpc.decode()
+            rpc = rpc.decode()
 
             # COMMAND_NAME##var1##var2....
             rpc = rpc.split('##')
             command = rpc[0]
 
             if command == "FIND_NODE":
-                id = command[1]
-                return self.routing_table.kbucket_lookup(id)
+                id = int(rpc[1])
+                k = self.routing_table.kbucket_lookup(id)
+                pickled_msg = pickle.dumps(k)
+                client_socket.send(pickled_msg)
+                handled = True
 
     def store_file(self, file_name, kbucket):    # todo: check why i wrote kbucket param
         pass
@@ -185,6 +181,13 @@ class Node:
     def pong(self, triple):
         pass
 
-
-def node_lookup_thread_func(triple):
-    pass
+    def _load_kbucket(self, file_path):
+        """
+        func loads to the node routing table a full or part of k-bucket csv file, for developer checks
+        :param file_path: the file path of the csv file
+        :return:
+        """
+        df = pd.read_csv(file_path)
+        for bucket_index in df:
+            kbucket = df[bucket_index].to_list()
+            self.routing_table.load_kbucket(bucket_index, kbucket)

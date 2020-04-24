@@ -5,13 +5,19 @@ class KBucket:
     """
 
     """
-    def __init__(self, range_factor):
+    def __init__(self, range_factor, **kwargs):
         """
 
         :param range_factor: the lower power in the range of the specific bucket
+        also the location in the kbucketlist)
         """
         self.bucket = []
         self.range_factor = range_factor
+
+        # allow build with bucket param
+        for key in kwargs:
+            if key == 'kbucket':
+                self.bucket = kwargs.get(key)
 
     # todo: what the hell is this
     def __getitem__(self, item):
