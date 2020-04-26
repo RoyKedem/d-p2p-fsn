@@ -163,8 +163,8 @@ class Node:
             command = rpc[0]
 
             if command == "FIND_NODE":
-                id = int(rpc[1])
-                k = self.routing_table.kbucket_lookup(id)
+                target_id = int(rpc[1])
+                k = self.routing_table.kbucket_lookup(target_id)
                 pickled_msg = pickle.dumps(k)
                 client_socket.send(pickled_msg)
                 handled = True
@@ -188,6 +188,8 @@ class Node:
         :return:
         """
         df = pd.read_csv(file_path)
+        
         for bucket_index in df:
-            kbucket = df[bucket_index].to_list()
-            self.routing_table.load_kbucket(bucket_index, kbucket)
+            if bucket_index != 'Unnamed: 0':
+                kbucket = df[bucket_index].to_list()
+                self.routing_table.load_kbucket(int(bucket_index), kbucket)
