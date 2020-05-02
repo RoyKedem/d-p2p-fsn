@@ -13,7 +13,7 @@ from KBucketList import KBucketList
 from TempTable import *
 # todo: create config file
 
-alpha = 1
+alpha = 3
 
 
 # todo: optional id param
@@ -29,10 +29,7 @@ class Node:
         # generate local id
         hostname = socket.gethostname()
         ip = socket.gethostbyname(hostname)
-
-        a = ip + str(self.port)
-        a = hashlib.md5(a.encode('latin-1'))
-        self.my_id = int(a.hexdigest(), 16)
+        self.my_id = utility.calc_id(ip, self.port)
 
         # routing table
         self.routing_table = KBucketList(self.my_id)
@@ -53,7 +50,7 @@ class Node:
         """
         search for a node with the kademlia algorithm
         :param target_id:
-        :return: KBucket obj of the K closest nodes to the node_id param
+        :return: list of triple obj of the K closest nodes to the node_id param
         """
         # step 1
         # x is a kbucket object that holds the triples of the k closets node
@@ -63,24 +60,28 @@ class Node:
 
         # step 2
         # choose random alpha nodes
-        alpha_nodes = []
+        """alpha_nodes = []
         for i in range(0, alpha):
             # todo: choices must be different
             alpha_nodes.append(random.choice(x))
-
+        """
         # step 3
-        temp_table = TempTable(alpha_nodes)
+        temp_table = TempTable(self.my_id, x)
 
         # step 4
-        self.node_lookup_recurse(target_id, temp_table)
+        return self.node_lookup_recurse(target_id, temp_table)
 
     def node_lookup_recurse(self, target_id, temp_table):
+        """
 
+        :param target_id:
+        :param temp_table:
+        :return:
+        """
         # this var hold the list before the changes to compare it to the list after the changes
         old_id_list = temp_table.get_id_list()
 
         # step 4
-        i = 0
         alpha_nodes = []
         # answers_threads - list of all the threads that holds the recv func
         answers_threads = []
@@ -88,42 +89,47 @@ class Node:
         answers = []
 
         # find the closest triple to the target that hasn't been queried yet
-        while (not temp_table.node_lookup_table[i].queried) and len(alpha_nodes) < 3:
-            alpha_nodes.append(temp_table.node_lookup_table[i])
+        i = 0
+        while len(alpha_nodes) < alpha and i < 20:
+            if not temp_table.node_lookup_table[i].queried:
+                alpha_nodes.append(temp_table.node_lookup_table[i])
             i += 1
         # send the FIND_NODE RPCs
         msg = "FIND_NODE##" + str(target_id)
         for node_connection in alpha_nodes:
             sock = node_connection.create_socket()  # socket type object
-            sock.send(msg)
+            if type(sock) == str:
+                print(sock)
+                node_connection.queried = True
+            else:
+                print('connection ')
+                sock.send(msg.encode())
         # step 5
-            node_connection.queried = True
+                node_connection.queried = True
 
         # step 6
 
             # each cell in the answers_threads list holds a thread of the recv function
             answers_threads.append(Thread(
                 target=lambda a, arg1, arg2, arg3: a.append(utility.recv_with_timeout(arg1, arg2, arg3)),
-                args=(answers, sock, 1024, 10)))
+                args=(answers, sock, 10000, 1)))
             answers_threads[-1].start()
-            answers_threads[-1].join()
 
         # while loop waits until all the threads are done or timeout
         while len(answers_threads) != 0:
             for thread in answers_threads:
                 if not thread.is_alive():  # if the thread is over
                     index = answers_threads.index(thread)
-                    if answers[index] != "ERROR: timeout":  # and it returned with kbucket
+                    if answers[index][:5] != "ERROR":  # and it returned with kbucket
                         # add kbuckets to the temp table
-                        temp_table.add_sorted_bucket(answers[index])
+                        temp_table.add_sorted_bucket(pickle.loads(answers[index]))
                     answers_threads.pop(index)  # remove the thread from the waiting list
-
         # step 7
         # compare the id list
         if old_id_list == temp_table.get_id_list() and temp_table.is_all_queried():
-            return temp_table
+            return temp_table.get_regular_bucket()
         else:
-            self.node_lookup_recurse(target_id, temp_table)
+            return self.node_lookup_recurse(target_id, temp_table)
 
     # todo: finish
     # todo: when receives a message from other it will add it to the KBucketList
@@ -143,11 +149,11 @@ class Node:
         while True:
             (client_socket, client_address) = server_socket.accept()
             clients.append(client_socket)
-            a = Thread(target=self.handle_rpc, args=(client_socket,))
+            a = Thread(target=self._handle_rpc, args=(client_socket,))
             a.start()
 
     # todo: finish
-    def handle_rpc(self, client_socket):
+    def _handle_rpc(self, client_socket):
         """
         handle all client RPCs
         :param client_socket: socket object to communicate with clients
@@ -181,7 +187,7 @@ class Node:
     def pong(self, triple):
         pass
 
-    def _load_kbucket(self, file_path):
+    def load_kbucket(self, file_path):
         """
         func loads to the node routing table a full or part of k-bucket csv file, for developer checks
         :param file_path: the file path of the csv file

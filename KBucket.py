@@ -1,4 +1,4 @@
-import Triple
+from Triple import Triple
 
 
 class KBucket:
@@ -17,7 +17,10 @@ class KBucket:
         # allow build with bucket param
         for key in kwargs:
             if key == 'kbucket':
-                self.bucket = kwargs.get(key)
+                kbucket_arg = kwargs.get(key)
+                for str in kbucket_arg:
+                    str = str.split('##')
+                    self.add_triple(Triple(str[1], int(str[2])))
 
     # todo: what the hell is this
     def __getitem__(self, item):
@@ -33,3 +36,5 @@ class KBucket:
             if trpl.id == triple_to_delete.id:
                 self.bucket.pop(index)
             index += 1
+x= 'frew'
+x.split('d')

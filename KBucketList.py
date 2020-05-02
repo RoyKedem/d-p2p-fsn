@@ -28,7 +28,27 @@ class KBucketList:
         kbucket_number = utility.find_appropriate_bucket(self.my_id, target_id)
 
         returned_bucket = self.bucket_list[kbucket_number].bucket.copy()
+        numbers = []
+        for i in range(0, 128):
+            numbers.append(i)
+
+        before_kbucket_number = numbers[:kbucket_number]
+        after_kbucket_number = numbers[:kbucket_number:-1]
+
+        search_order = []
+        for i in range(0, 128):
+            if i % 2 == 0:
+                if before_kbucket_number:
+                    search_order.append(before_kbucket_number.pop(-1))
+            else:
+                if after_kbucket_number:
+                    search_order.append(after_kbucket_number.pop(-1))
+        for i in search_order:
+            returned_bucket.extend(self.bucket_list[i].bucket.copy())
+            if len(returned_bucket) > 20:
+                returned_bucket = returned_bucket[:20]
+                break
+
         print(self.bucket_list[kbucket_number].range_factor, self.bucket_list[kbucket_number].bucket)
         # replace 20 with const
-        # todo: return always k length bucket
         return returned_bucket

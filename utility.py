@@ -16,10 +16,12 @@ def distance(a, b):
 
 def find_appropriate_bucket(my_id, target_id):
     dist = distance(my_id, target_id)
+    print(dist)
 
     for i in range(0, 128):  # replace 128 with const
-        bottom_range = (2 ** i) + my_id
-        end_range = (2 ** (i + 1)) + my_id
+        bottom_range = (2 ** i)
+        end_range = (2 ** (i + 1))
+
         if (bottom_range <= dist) and (dist < end_range):
             return i
 
@@ -33,6 +35,8 @@ def recv_with_timeout(sock, size, timeout):
     :return:
     """
     # set timeout of 10 seconds of no activity
+    if type(sock) == str:
+        return 'ERROR: timeout'
     sock.settimeout(timeout)
 
     try:

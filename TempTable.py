@@ -15,13 +15,14 @@ class TempTableTripleObject(Triple):
 
 
 class TempTable:
-    def __init__(self, alpha_nodes=""):
+    def __init__(self, my_id, alpha_nodes):
+        self.my_id = my_id
         self.node_lookup_table = []
-        if alpha_nodes != "":
-            for trpl in alpha_nodes:
-                self.node_lookup_table.append(TempTableTripleObject(trpl))
 
-    def add_sorted_bucket(self, k_bucket, my_id):
+        for trpl in alpha_nodes:
+            self.node_lookup_table.append(TempTableTripleObject(trpl))
+
+    def add_sorted_bucket(self, k_bucket):
         """
         add a new bucket to the TempTable. it adds the triples in order by the distance from my_id
         :param k_bucket: the bucket you want to add
@@ -31,7 +32,7 @@ class TempTable:
         for triple in k_bucket:
             self.node_lookup_table.append(TempTableTripleObject(triple))
 
-        self.node_lookup_table.sort(key=lambda elem: elem.id ^ my_id)
+        self.node_lookup_table.sort(key=lambda elem: elem.id ^ self.my_id)
 
         # remove duplicates
         seen_ids = []
@@ -43,8 +44,7 @@ class TempTable:
 
         # length of the node lookup table is max 20
         if len(self.node_lookup_table) > 20:
-            for i in range(20, len(self.node_lookup_table)):
-                self.node_lookup_table.pop(i)
+            self.node_lookup_table = self.node_lookup_table[:20]
 
     def get_id_list(self):
         """
@@ -62,6 +62,11 @@ class TempTable:
 
         :return: a kbucket that holds Triple instead Triple 2
         """
+        bucket = []
+        # ttto stands for TempTableTripleObject
+        for ttto in self.node_lookup_table:
+            bucket.append(Triple(ttto.ip, ttto.port, id=ttto.id))
+        return bucket
 
     def is_all_queried(self):
         for triple in self.node_lookup_table:

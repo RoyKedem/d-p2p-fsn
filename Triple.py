@@ -12,16 +12,20 @@ class Triple:
         """
         self.ip = ip
         self.port = port
-
         for key in kwargs:
-            print(kwargs)
             if key == 'id':
                 self.id = kwargs.get(key)
-            else:
-                self.id = utility.calc_id(self.ip, self.port)
+        if not kwargs:
+            self.id = utility.calc_id(self.ip, self.port)
 
     def create_socket(self):
         my_socket = socket.socket()
-
-        my_socket.connect((self.ip, self.port))
-        return my_socket
+        my_socket.settimeout(1)
+        print('trying to connect with python socket to', self.ip, 'on port', self.port)
+        try:
+            my_socket.connect((self.ip, self.port))
+            return my_socket
+        except socket.timeout:
+            return 'ERROR: timeout'
+        except socket.error:
+            return 'ERROR: socket error'
