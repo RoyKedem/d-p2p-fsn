@@ -35,18 +35,17 @@ class Node:
         self.routing_table = KBucketList(self.my_id)
 
         # my shared files
-        self.my_shared_files = []
+        self.my_shared_files = {}
 
         # storage
-        self.storage = []
+        self.storage = {}
 
         print('starting main thread...')
         server_thread = Thread(target=self.main_thread)
         server_thread.start()
         print('Done!')
 
-    # todo: parallelism
-    def node_lookup(self, target_id):
+    def _node_lookup(self, target_id):
         """
         search for a node with the kademlia algorithm
         :param target_id:
@@ -69,9 +68,9 @@ class Node:
         temp_table = TempTable(self.my_id, x)
 
         # step 4
-        return self.node_lookup_recurse(target_id, temp_table)
+        return self._node_lookup_recurse(target_id, temp_table)
 
-    def node_lookup_recurse(self, target_id, temp_table):
+    def _node_lookup_recurse(self, target_id, temp_table):
         """
 
         :param target_id:
@@ -98,6 +97,7 @@ class Node:
         msg = "FIND_NODE##" + str(target_id)
         for node_connection in alpha_nodes:
             sock = node_connection.create_socket()  # socket type object
+            # if sock type is string there is an error (error msg returned, not sock obj)
             if type(sock) == str:
                 print(sock)
                 node_connection.queried = True
@@ -129,7 +129,7 @@ class Node:
         if old_id_list == temp_table.get_id_list() and temp_table.is_all_queried():
             return temp_table.get_regular_bucket()
         else:
-            return self.node_lookup_recurse(target_id, temp_table)
+            return self._node_lookup_recurse(target_id, temp_table)
 
     # todo: finish
     # todo: when receives a message from other it will add it to the KBucketList
@@ -168,15 +168,38 @@ class Node:
             rpc = rpc.split('##')
             command = rpc[0]
 
-            if command == "FIND_NODE":
+            if command == 'FIND_NODE':
                 target_id = int(rpc[1])
                 k = self.routing_table.kbucket_lookup(target_id)
                 pickled_msg = pickle.dumps(k)
                 client_socket.send(pickled_msg)
                 handled = True
 
-    def store_file(self, file_name, kbucket):    # todo: check why i wrote kbucket param
-        pass
+            if command == 'STORE_FILE':
+                file_name = rpc[1]
+                owner_id = rpc[2]
+                self.storage[file_name] = owner_id
+                handled = True
+
+    def store_file(self, file_name, file_path):
+        # discover what is the file id
+        file_id = hashlib.md5(file_name)
+        # add the file path to my shared files dict
+        self.my_shared_files[file_id] = file_path
+        # discover k closest nodes to the file id
+        file_link_holders = self._node_lookup(file_id)
+
+        msg = 'STORE_FILE##' + file_name + '##' + str(self.my_id)
+
+        # todo: maybe add ack msg
+        for file_holder in file_link_holders:
+            sock = file_holder.create_socket()
+            # if sock type is string there is an error (error msg returned, not sock obj)
+            if type(sock) == str:
+                print(sock)
+            else:
+                print('connection ')
+                sock.send(msg.encode())
 
     def file_lookup(self, file_name):
         pass
