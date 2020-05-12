@@ -15,8 +15,8 @@ class TempTableTripleObject(Triple):
 
 
 class TempTable:
-    def __init__(self, my_id, alpha_nodes):
-        self.my_id = my_id
+    def __init__(self, target_id, alpha_nodes):
+        self.target_id = target_id
         self.node_lookup_table = []
 
         for trpl in alpha_nodes:
@@ -24,17 +24,17 @@ class TempTable:
 
     def add_sorted_bucket(self, k_bucket):
         """
-        add a new bucket to the TempTable. it adds the triples in order by the distance from my_id
+        add a new bucket to the TempTable. it adds the triples in order by the distance from target_id
         :param k_bucket: the bucket you want to add
-        :param my_id: the id of this node (to calc the distance from each triple)
+        :param target_id: the id of this node (to calc the distance from each triple)
         :return:
         """
         for triple in k_bucket:
-            if triple.port == 100:
+            if triple.port == 3000:
                 print('100 goten')
             self.node_lookup_table.append(TempTableTripleObject(triple))
 
-        self.node_lookup_table.sort(key=lambda elem: elem.id ^ self.my_id)
+        self.node_lookup_table.sort(key=lambda elem: elem.id ^ self.target_id)
 
         # remove duplicates
         seen_ids = []

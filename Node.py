@@ -65,7 +65,7 @@ class Node:
             alpha_nodes.append(random.choice(x))
         """
         # step 3
-        temp_table = TempTable(self.my_id, x)
+        temp_table = TempTable(target_id, x)
 
         # step 4
         return self._node_lookup_recurse(target_id, temp_table)
@@ -202,7 +202,21 @@ class Node:
                 sock.send(msg.encode())
 
     def file_lookup(self, file_name):
-        pass
+        # discover what is the file id
+        file_id = hashlib.md5(file_name)
+        # discover k closest nodes to the file id
+        file_link_holders = self._node_lookup(file_id)
+        msg = 'FILE_LOOKUP##' + file_name
+
+        # todo: maybe add ack msg
+        for file_holder in file_link_holders:
+            sock = file_holder.create_socket()
+            # if sock type is string there is an error (error msg returned, not sock obj)
+            if type(sock) == str:
+                print(sock)
+            else:
+                print('connection ')
+                sock.send(msg.encode())
 
     def ping(self, triple):
         pass

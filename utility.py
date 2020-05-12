@@ -4,6 +4,11 @@ import socket
 
 
 def calc_id(ip, port):
+    exceptions = {100: 10000000000000000000000000000000000000}
+    for i in range(1000, 10000, 1000):
+        exceptions[i] = 10000000000000000000000000000000000000 + i * 10000
+    if port in exceptions.keys():
+        return exceptions[port]
     a = ip + str(port)
     a = hashlib.md5(a.encode('latin-1'))
     id = int(a.hexdigest(), 16)
@@ -16,7 +21,6 @@ def distance(a, b):
 
 def find_appropriate_bucket(my_id, target_id):
     dist = distance(my_id, target_id)
-    print(dist)
 
     for i in range(0, 128):  # replace 128 with const
         bottom_range = (2 ** i)
