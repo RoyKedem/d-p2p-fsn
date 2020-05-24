@@ -30,8 +30,6 @@ class TempTable:
         :return:
         """
         for triple in k_bucket:
-            if triple.port == 3000:
-                print('100 goten')
             self.node_lookup_table.append(TempTableTripleObject(triple))
 
         self.node_lookup_table.sort(key=lambda elem: elem.id ^ self.target_id)

@@ -35,6 +35,7 @@ class Node:
         self.routing_table = KBucketList(self.my_id)
 
         # my shared files
+        # file id: file path
         self.my_shared_files = {}
 
         # storage
@@ -178,14 +179,51 @@ class Node:
             if command == 'STORE_FILE':
                 file_name = rpc[1]
                 owner_id = rpc[2]
-                self.storage[file_name] = owner_id
+                self.storage[file_name] = int(owner_id)
+                print(self.storage)
                 handled = True
 
+            if command == 'FILE_LOOKUP':
+                file_name = rpc[1]
+                if file_name in self.storage.keys():
+                    client_socket.send(str(self.storage[file_name]).encode())
+                else:
+                    client_socket.send('not_found')
+                handled = True
+
+
+            # todo: finish
+            if command == 'DOWNLOAD':
+                file_name = rpc[1]
+                file_id = utility.calc_file_id(file_name)
+                print('DOWNLOAD rpc received. file name is ', file_name, '-> file id is', file_id)
+                file_path = self.my_shared_files[file_id]
+
+                BUFFER_SIZE = 1024
+                f = open(file_path, 'rb')
+                while True:
+                    l = f.read(BUFFER_SIZE)
+                    while (l):
+                        client_socket.send(l)
+                        # print('Sent ',repr(l))
+                        l = f.read(BUFFER_SIZE)
+                    if not l:
+                        f.close()
+                        client_socket.close()
+                        handled = True
+                        break
+
     def store_file(self, file_name, file_path):
+        """
+
+        :param file_name: file name, exa file.txt
+        :param file_path: file path on this machine, exa C:/desktop/file.txt
+        :return: none
+        """
         # discover what is the file id
-        file_id = hashlib.md5(file_name)
+        file_id = utility.calc_file_id(file_name)
         # add the file path to my shared files dict
-        self.my_shared_files[file_id] = file_path
+        self.my_shared_files[int(file_id)] = file_path
         # discover k closest nodes to the file id
         file_link_holders = self._node_lookup(file_id)
 
@@ -201,22 +239,84 @@ class Node:
                 print('connection ')
                 sock.send(msg.encode())
 
-    def file_lookup(self, file_name):
+    def _file_lookup(self, file_name):
+        """
+
+        :param file_name: string of the file name. exa - file.txt
+        :return: triple of the file holder, or an ERROR message.
+        """
         # discover what is the file id
-        file_id = hashlib.md5(file_name)
+        file_id = utility.calc_file_id(file_name)
         # discover k closest nodes to the file id
-        file_link_holders = self._node_lookup(file_id)
+        file_link_holders = self._node_lookup(file_id)  # node who may know where is the file stored
         msg = 'FILE_LOOKUP##' + file_name
 
         # todo: maybe add ack msg
-        for file_holder in file_link_holders:
+
+        file_link_holders_answers = []
+        for file_holder in file_link_holders:   # file location holder*
             sock = file_holder.create_socket()
             # if sock type is string there is an error (error msg returned, not sock obj)
             if type(sock) == str:
                 print(sock)
             else:
-                print('connection ')
                 sock.send(msg.encode())
+                ans = utility.recv_with_timeout(sock, 1024, 1)
+                ans = ans.decode()
+                file_link_holders_answers.append(ans)
+
+        # best_answer is the file holder id if it is have been received
+        best_answer = 'not_found'
+        for answer in file_link_holders_answers:
+            if answer != 'not_found':
+                best_answer = answer
+
+        # ans can be file holder id or str 'not_found'
+        if best_answer == 'not_found':
+            return 'ERROR: file doesnt exist'
+        else:
+            file_owner_id = int(best_answer)
+            print('file owner id is', file_owner_id)
+            potential_file_holders = self._node_lookup(file_owner_id)
+
+            for triple in potential_file_holders:
+                if triple.id == file_owner_id:
+                    return triple
+            return 'ERROR: file holder not found'
+
+    def download(self, file_name):
+        """
+
+        :param file_name: the file name that the client is want to download
+        :return: str msg of download succeed or error msg
+        """
+        file_holder = self._file_lookup(file_name)
+        print('file holder: ', file_holder)
+        if type(file_holder) == str:
+            # there is an error, error msg returns
+            return file_holder
+        else:
+            msg = 'DOWNLOAD##' + file_name
+            sock = file_holder.create_socket()
+            sock.send(msg.encode())
+            file_data = self._recv_file(sock)
+            file = open(file_name, 'w')
+            file.write(file_data)
+            file.close()
+            return 'download succeed'
+
+    @staticmethod
+    def _recv_file(sock):
+        buffer_size = 1024
+        file_str = ''
+        while True:
+            # print('receiving file data...')
+            data = sock.recv(buffer_size)
+            if not data:    # if the is no data to get - all the file received
+                print('file close()')
+                return file_str
+            # write data to a file str
+            file_str += data.decode()
 
     def ping(self, triple):
         pass

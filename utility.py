@@ -2,6 +2,8 @@
 import hashlib
 import socket
 
+default_id = 10000000000000000000000000000000000000
+
 
 def calc_id(ip, port):
     exceptions = {100: 10000000000000000000000000000000000000}
@@ -15,12 +17,23 @@ def calc_id(ip, port):
     return id
 
 
+def calc_file_id(file_name):
+    if file_name == 'file.txt':
+        return 10000000000000000000000000000030000000
+    else:
+        a = hashlib.md5(file_name.encode('latin-1'))
+        file_id = int(a.hexdigest(), 16)
+        return file_id
+
+
 def distance(a, b):
     return int(a) ^ int(b)
 
 
 def find_appropriate_bucket(my_id, target_id):
     dist = distance(my_id, target_id)
+    if dist == 0:
+        return 1
 
     for i in range(0, 128):  # replace 128 with const
         bottom_range = (2 ** i)

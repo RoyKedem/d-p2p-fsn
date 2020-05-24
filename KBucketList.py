@@ -26,6 +26,7 @@ class KBucketList:
         :return: List
         """
         kbucket_number = utility.find_appropriate_bucket(self.my_id, target_id)
+        print('preforming kbucket lookup target id: ', target_id, '-> kbucket ', kbucket_number)
 
         returned_bucket = self.bucket_list[kbucket_number].bucket.copy()
         numbers = []
