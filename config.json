@@ -1,0 +1,4 @@
+{
+  "port": 1000,
+  "kbucket": "tests/nodeA.csv"
+}

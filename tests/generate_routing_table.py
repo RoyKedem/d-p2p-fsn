@@ -42,22 +42,20 @@ def _create_routing_table(self_id, file_name, *args):
         file.close()
 
     routing_table = pd.DataFrame()
+    # todo: fix more then one arg problem
     for arg in args:
         ip = arg.split('##')[0]
-        port = arg.split('##')[1]
+        port = int(arg.split('##')[1])
         arg_id = utility.calc_id(ip, port)
 
         arg_triple_string = str(arg_id) + '##' + ip + '##' + str(port)
         kbucket = _create_triple_list()
-        kbucket[0] = arg_triple_string
+        kbucket[args.index(arg)] = arg_triple_string
 
-        distance = utility.distance(self_id, arg_id)
-        for i in range(0, 128):  # replace 128 with const
-            bottom_range = (2 ** i) + self_id
-            end_range = (2 ** (i + 1)) + self_id
-            if (bottom_range <= distance) and (distance < end_range):
-                routing_table[str(i)] = kbucket
-                break
+        kbucket_number = utility.find_appropriate_bucket(self_id, arg_id)
+        print(kbucket_number)
+        routing_table[str(kbucket_number)] = kbucket
+
     routing_table.to_csv(file_name)
 
 
@@ -75,15 +73,9 @@ def mmm():
     print(file.iloc[0:, 0])
 
 
-def multiplication_table():
-    df = pd.DataFrame()
-    for i in range(1, 10):
-        cols = []
-        for j in range(1, 10):
-            cols.append(j * i)
-        df[str(i)] = cols
-    return df
-
-
 if __name__ == '__main__':
-    _create_routing_table(3213212, 'try.csv', '127.0.0.1##100')
+    ip = '192.168.56.1'
+    _create_routing_table(utility.calc_id(ip, 1000), 'nodeA.csv', '192.168.56.1##2000')
+    _create_routing_table(utility.calc_id(ip, 2000), 'nodeB.csv', '192.168.56.1##3000')
+    _create_routing_table(utility.calc_id(ip, 3000), 'nodeC.csv', '192.168.7.156##100', '192.168.56.1##1000')
+    _create_routing_table(utility.calc_id(ip, 3999), 'nodeD.csv', '192.168.56.1##3000')
